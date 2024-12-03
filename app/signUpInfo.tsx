@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Alert,
   View,
@@ -12,29 +12,55 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import DropDownPicker from "react-native-dropdown-picker";
+import { supabase } from "../lib/supabase";
+import { useUser } from "../contexts/UserContext"; // Import UserContext
 
-const SignUp = () => {
+const SignUpInfo = () => {
   const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [birthdate, setBirthdate] = useState<Date | null>(null);
+  const { name, setName } = useUser();
+  const { birthdate, setBirthdate } = useUser();
+  const { gender, setGender } = useUser();
+  const [Gender, SetGender] = useState<string>("");
+  const [Clusterid, SetClusterid] = useState<string>("");
+  const { clusterid, setClusterid } = useUser();
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [gender, setGender] = useState<string | null>(null);
-  const [building, setBuilding] = useState<string | null>(null);
   const [genderOpen, setGenderOpen] = useState(false);
-  const [buildingOpen, setBuildingOpen] = useState(false);
-
+  const [clusterOpen, setClusterOpen] = useState(false);
+  const [clusters, setClusters] = useState<{ label: string; value: number }[]>([]);
+ // Lưu danh sách cụm
+ setClusterid(parseInt(Clusterid, 10));
+  setGender (Gender);
   const genderOptions = [
-    { label: "Nam", value: "male" },
-    { label: "Nữ", value: "female" },
-    { label: "Khác", value: "other" },
+    { label: "Nam", value: "Nam" },
+    { label: "Nữ", value: "Nữ" },
+    { label: "Khác", value: "Khác" },
   ];
 
-  const buildingOptions = [
-    { label: "Tòa nhà A", value: "A" },
-    { label: "Tòa nhà B", value: "B" },
-    { label: "Tòa nhà C", value: "C" },
-  ];
+  // Hàm lấy dữ liệu cluster từ cơ sở dữ liệu
+  const fetchClusters = async () => {
+    try {
+      const { data, error } = await supabase.from("cluster").select("clusterid, name");
+      console.log("Dữ liệu nhận được từ cơ sở dữ liệu:", data);
+      if (error) throw error;
 
+      // Chuyển dữ liệu về định dạng DropDownPicker
+      setClusters(
+        data.map((item) => ({
+          label: item.name,
+          value: item.clusterid,
+        }))
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Lỗi khi tải danh sách cụm:", error.message);
+      } else {
+        console.error("Lỗi khi tải danh sách cụm:", error);
+      }
+    }
+  };
+    useEffect(() => {
+      fetchClusters();
+    }, []);
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
@@ -48,7 +74,7 @@ const SignUp = () => {
   };
 
   const handleConfirm = () => {
-    if (!username || !birthdate || !gender) {
+    if (!name || !birthdate || !gender) {
       Alert.alert("Thông báo", "Vui lòng điền đầy đủ thông tin!");
       return;
     }
@@ -82,8 +108,8 @@ const SignUp = () => {
         <TextInput
           style={styles.input}
           placeholder="Tên người dùng"
-          value={username}
-          onChangeText={setUsername}
+          value={name}
+          onChangeText={setName}
         />
       </View>
 
@@ -100,7 +126,7 @@ const SignUp = () => {
 
 {showDatePicker && (
   <DateTimePicker
-    value={birthdate || new Date()}
+    value={birthdate}
     mode="date"
     display={Platform.OS === "ios" ? "spinner" : "default"}
     onChange={handleDateChange}
@@ -119,7 +145,7 @@ const SignUp = () => {
   value={gender}
   items={genderOptions}
   setOpen={setGenderOpen}
-  setValue={setGender}
+  setValue={SetGender}
   placeholder="Giới tính"
   style={styles.dropdown} // Đảm bảo chiếm đủ chiều rộng
   dropDownContainerStyle={styles.dropdownContainer}
@@ -137,11 +163,11 @@ const SignUp = () => {
   />
   <View style={{ flex: 1 }}>
   <DropDownPicker
-    open={buildingOpen}
-    value={building}
-    items={buildingOptions}
-    setOpen={setBuildingOpen}
-    setValue={setBuilding}
+    open={clusterOpen}
+    value={clusterid}
+    items={clusters}
+    setOpen={setClusterOpen}
+    setValue={SetClusterid}
     placeholder="Tòa nhà"
     style={styles.dropdown}
     dropDownContainerStyle={styles.dropdownContainer}
@@ -158,6 +184,7 @@ const SignUp = () => {
     </View>
   );
 };
+export default SignUpInfo;
 
 const styles = StyleSheet.create({
   container: {
@@ -248,5 +275,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SignUp;
+
 

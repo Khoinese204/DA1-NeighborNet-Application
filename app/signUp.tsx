@@ -13,8 +13,9 @@ import { useRouter } from "expo-router"; // Thay bằng @react-navigation nếu 
 import { useUser } from "../contexts/UserContext"; // Import UserContext
 import { supabase } from "../lib/supabase";
 
-const SignUp1 = () => {
-  const { name, birthdate, gender } = useUser();
+
+const SignUp = () => {
+  const { name, birthdate, gender, clusterid } = useUser();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,37 +25,76 @@ const SignUp1 = () => {
   const handleBack = () => {
     router.push("/signUpInfo"); // Điều hướng về trang đăng ký trước đó
   };
-
+  console.log({ name, birthdate, gender, clusterid });
   const handleSignUp = async () => {
-    console.log({ email, password, confirmPassword });
+    console.log({ name, birthdate, gender, clusterid });
+    
     if (password !== confirmPassword) {
       Alert.alert("Lỗi", "Mật khẩu không khớp!");
       return;
     }
+    
     setLoading(true);
+
     try {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
-      setLoading(false);
-      if (error) {
-        console.error("Error signing up:", error);
-        Alert.alert("Sign up", error.message);
+      if (authError) {
+        setLoading(false);
+        console.error("Error signing up:", authError);
+        Alert.alert("Đăng ký thất bại", authError.message);
         return;
       }
+      // The profileID is now the user.auth.id (the user ID from Supabase)
+      const accountid = authData?.user?.id;
+      console.log({ accountid, email, password, confirmPassword });
+      // Step 2: Create the profile with profileID set to user.auth.id
+      const { data: accountData, error: accountError } = await supabase
+      .from("account")
+      .update({
+        email,           // Cập nhật email
+        password,        // Cập nhật mật khẩu (nên mã hóa mật khẩu trước khi lưu)
+        roleid: 2,       // Cập nhật roleID, mặc định là 2
+      })
+      .eq('accountid', accountid); // Điều kiện để cập nhật theo accountid
+        if (accountError) {
+          setLoading(false);
+          Alert.alert("Lỗi tạo account", accountError.message);
+          return;
+        }
+        // Step 3: Create the user entry in the 'user' table
+      const { error: userError } = await supabase
+      .from("user")
+      .insert([
+        {
+          accountid: accountid, // Link to the profileID
+          name: name,
+          dateofbirth: birthdate,
+          gender: gender,
+          clusterid: clusterid,
+        },
+      ]);
 
-      console.log("session: ", session);
-      // Navigate to the next screen
-      router.push("/signIn");
-    } catch (error) {
-      console.error("Unexpected error:", error);
-      Alert.alert("Sign up", "An unexpected error occurred. Please try again.");
+    setLoading(false);
+
+    if (userError) {
+      Alert.alert("Lỗi tạo người dùng User", userError.message);
+      return;
     }
-  };
+
+    console.log("User created with profileID:", accountid);
+
+    // Navigate to the next screen
+    router.push("/signIn");
+  } catch (error) {
+    setLoading(false);
+    console.error("Unexpected error:", error);
+    Alert.alert("Đăng ký thất bại", "Đã xảy ra lỗi ngoài ý muốn. Vui lòng thử lại.");
+  }
+};
+
   return (
     <View style={styles.container}>
       {/* Back Button */}
@@ -135,7 +175,7 @@ const SignUp1 = () => {
   );
 };
 
-export default SignUp1;
+export default SignUp;
 
 const styles = StyleSheet.create({
   container: {
