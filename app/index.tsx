@@ -6,7 +6,7 @@ const index = () => {
     const router = useRouter()
     return (
      <View>
-        <Button title="Newsfeed" onPress={() => router.push('profile')}></Button>
+        <Button title="Newsfeed" onPress={() => router.push('create-post')}></Button>
  
      </View>
     )
