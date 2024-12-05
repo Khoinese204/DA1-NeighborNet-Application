@@ -117,7 +117,7 @@ const Newsfeed = () => {
           {/* Các Tab không có nội dung */}
           <Tab.Screen name="Trang chủ" component={HomeScreen} />
           <Tab.Screen name="Sự kiện" component={EventScreen} />
-          <Tab.Screen name="Bài viết" component={PostScreen} />
+          <Tab.Screen name="Bài viết" component={PostScreen} /> 
           <Tab.Screen name="Thông báo" component={NotificationScreen} />
           <Tab.Screen name="Cá nhân" component={ProfileScreen} />
         </Tab.Navigator>
