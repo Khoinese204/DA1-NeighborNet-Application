@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   View,
   Text,
   TextInput,
@@ -11,6 +12,7 @@ import {
   Button,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { insertPost } from '../service/postService';
 
 const PostScreen = () => {
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
@@ -18,19 +20,23 @@ const PostScreen = () => {
   const [selectedService, setSelectedService] = useState('Dịch vụ');
   const [selectedAudience, setSelectedAudience] = useState('Đối tượng');
   const [image, setImage] = useState<string | null>(null);
+  const [content, setContent] = useState('');
 
   const services = [
-    'Sửa chữa nhà cửa',
-    'Vệ sinh',
-    'Giao hàng và vận chuyển',
-    'Cây cảnh và thú cưng',
-    'Giáo dục',
-    'Chăm sóc sức khỏe',
-    'Mua bán',
-  ];
+      { id: 1, name: 'Sửa chữa nhà cửa' },
+      { id: 2, name: 'Vệ sinh' },
+      { id: 3, name: 'Giao hàng và vận chuyển' },
+      { id: 4, name: 'Cây cảnh và thú cưng' },
+      { id: 5, name: 'Giáo dục' },
+      { id: 6, name: 'Chăm sóc sức khỏe' },
+      { id: 7, name: 'Mua bán' },
+    ];
 
   const audiences = ['Mọi người', 'Chỉ mình tôi'];
-
+  const userid = 5; // ID người dùng giả định
+  const scope = selectedAudience;
+  const serviceid = services.find((s) => s.name === selectedService)?.id || null;
+  
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
@@ -43,6 +49,32 @@ const PostScreen = () => {
       setImage(result.assets[0].uri);
     }
   };
+
+  const handlePost = async () => {
+    if (!content.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập nội dung bài viết.');
+      return;
+    }
+
+    if (!serviceid) {
+      Alert.alert('Lỗi', 'Vui lòng chọn một dịch vụ.');
+      return;
+    }
+
+    try {
+      await insertPost(userid, serviceid, content, image);
+      Alert.alert('Thành công', 'Bài viết đã được đăng.');
+      setContent('');
+      setImage(null);
+      setSelectedService('Dịch vụ');
+      setSelectedAudience('Đối tượng');
+    } catch (error) {
+      Alert.alert('Lỗi', `Không thể đăng bài viết: ${error.message}`);
+    }
+  };
+
+
+
 
   return (
     <View style={styles.container}>
@@ -58,7 +90,7 @@ const PostScreen = () => {
             <Text style={styles.userLocation}>Cư dân tòa S1.01</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.postButton}>
+        <TouchableOpacity style={styles.postButton} onPress={handlePost}>
           <Text style={styles.postButtonText}>Đăng</Text>
         </TouchableOpacity>
       </View>
@@ -85,6 +117,8 @@ const PostScreen = () => {
         placeholder="Bạn đang nghĩ gì?"
         placeholderTextColor="#b0b0b0"
         multiline={true}
+        value={content}
+        onChangeText={setContent}
       />
 
       {/* Image Picker */}
@@ -116,11 +150,11 @@ const PostScreen = () => {
                   <TouchableOpacity
                     style={styles.modalItem}
                     onPress={() => {
-                      setSelectedService(item);
+                      setSelectedService(item.name);
                       setServiceModalVisible(false);
                     }}
                   >
-                    <Text style={styles.modalText}>{item}</Text>
+                    <Text style={styles.modalText}>{item.name}</Text>
                   </TouchableOpacity>
                 )}
               />
