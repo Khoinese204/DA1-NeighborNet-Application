@@ -1,65 +1,38 @@
-import { decode } from 'base64-arraybuffer';
-import * as FileSystem from 'expo-file-system'
 import { supabase } from '../lib/supabase';
-import { supabaseUrl } from '../constants';
 
+const uploadImageToSupabase = async (localUri: string) => {
+  try {
+    console.log('Local URI:', localUri);
+    
+    // Fetch file and convert to ArrayBuffer
+    const response = await fetch(localUri);
+    const arrayBuffer = await response.arrayBuffer(); // Lấy ArrayBuffer thay vì Blob
 
-export const getUserImageSrc = (imagePath: any) => {
-    if(imagePath){
-        return getSupabaseFileUrl(imagePath);
-    }else{
-        return require('../assets/images/defaultUser.png');
+    const fileName = localUri.split('/').pop(); 
+
+    console.log('File name', fileName); // 8f877894-03cf-4a24-b3a6-52521b0b6b09.png
+    
+    // Tải ảnh lên Supabase storage dưới dạng ArrayBuffer
+    const { data, error } = await supabase.storage
+      .from('images') // Tên bucket
+      .upload(`post-images/${fileName}`, arrayBuffer, {
+        contentType: 'image/jpg', // Đảm bảo rằng contentType phù hợp
+      });
+
+    if (error) throw error;
+
+    if (data?.path) {
+      // Lấy URL công khai của ảnh
+      const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(data.path);
+      console.log("Public URL:", publicUrlData.publicUrl);
+      return publicUrlData.publicUrl; // Trả về URL công khai
+    } else {
+      throw new Error('Upload thành công nhưng không nhận được đường dẫn file.');
     }
-}
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    return null; // Trả về null nếu có lỗi
+  }
+};
 
-export const getSupabaseFileUrl = (filePath: any) => {
-    if(filePath){
-        return{uri: `${supabaseUrl}/storage/v1/object/public/uploads/${filePath}`}
-    }
-    return null;
-}
-
-export const downloadFile = async (url: string)=>{
-    try{
-        const {uri} = await FileSystem.downloadAsync(url, getLocalFilePath(url));
-        return uri;
-    }catch(error){
-        return null;
-    }
-}
-
-export const getLocalFilePath = (filePath: string) =>{
-    let fileName = filePath.split('/').pop();
-    return `${FileSystem.documentDirectory}${fileName}`;
-}
-
-export const uploadFile = async(folderName: any, fileUri: string, isImage=true ) =>{
-    try {
-        let fileName = getFilePath(folderName, isImage);
-        const fileBase64 = await FileSystem.readAsStringAsync(fileUri,{
-            encoding: FileSystem.EncodingType.Base64
-        });
-        let imageData = decode(fileBase64);
-        let {data, error} = await supabase
-        .storage
-        .from('uploads')
-        .upload(fileName, imageData, {
-            cacheControl: '3600',
-            upsert: false,
-            contentType: isImage? 'image/*': 'video/*'
-        });
-        if(error){
-            console.log('file upload error: ', error);
-            return {success: false, msg:'Could not upload media'};
-        }
-
-        return{success: true, data: data.path}
-    }catch(error){
-        console.log('file upload error: ', error)
-        return {success: false, msg: 'Could not upload media'};
-    }
-}
-
-export const getFilePath = (folderName: any, isImage: boolean) =>{
-    return `/${folderName}/${(new Date()).getTime()}${isImage? '.png':'.mp4'}`;
-}
+export default uploadImageToSupabase;

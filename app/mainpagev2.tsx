@@ -14,12 +14,13 @@ import BubbleChatIcon from "@/assets/icons/ChatButton";
 import FilterIcon from "@/assets/icons/FilterButton";
 import { TabView, TabBar } from "react-native-tab-view";  // Import TabView
 import { Route } from 'react-native-tab-view';
-import PostScreen from "./create-post-v3";
+import CreatePostScreen from "./create-post-v3";
 import ProfileScreen from "./profile";
+import PostsListScreen from './view-post-3';
 
 
 // Màn hình Trang chủ
-const ViewNewsfeedScreen = () => {
+const ViewNewsfeed= () => {
   const [index, setIndex] = useState(0);  // Quản lý tab hiện tại
   const [routes] = useState([
     { key: "posts", title: "Bài viết" },
@@ -31,9 +32,7 @@ const ViewNewsfeedScreen = () => {
     switch (route.key) {
       case "posts":
         return (
-          <View style={styles.scene}>
-            <Text style={styles.tabContent}>Danh sách bài viết</Text>
-          </View>
+            <PostsListScreen></PostsListScreen>
         );
       case "highlights":
         return (
@@ -85,23 +84,23 @@ const ViewNewsfeedScreen = () => {
   );
 };
 
-const EventScreen = () => (
+const Event = () => (
   <View>
     <Text>Sự kiện</Text>
   </View>
 );
 
-const CreatePostScreen = () => ( 
-  <PostScreen></PostScreen>
+const CreatePost = () => ( 
+  <CreatePostScreen></CreatePostScreen>
 );
 
-const NotificationScreen = () => (
+const Notification = () => (
   <View>
     <Text>Thông báo</Text>
   </View>
 );
 
-const ViewProfileScreen = () => (
+const ViewProfile = () => (
   <ProfileScreen></ProfileScreen>
 );
 
@@ -146,11 +145,11 @@ const MainPage = () => {
         })}
       >
         {/* Các Tab không có nội dung */}
-        <Tab.Screen name="Trang chủ" component={ViewNewsfeedScreen} />
-        <Tab.Screen name="Sự kiện" component={EventScreen} />
-        <Tab.Screen name="Bài viết" component={CreatePostScreen} />
-        <Tab.Screen name="Thông báo" component={NotificationScreen} />
-        <Tab.Screen name="Cá nhân" component={ViewProfileScreen} />
+        <Tab.Screen name="Trang chủ" component={ViewNewsfeed} />
+        <Tab.Screen name="Sự kiện" component={Event} />
+        <Tab.Screen name="Bài viết" component={CreatePost} />
+        <Tab.Screen name="Thông báo" component={Notification} />
+        <Tab.Screen name="Cá nhân" component={ViewProfile} />
       </Tab.Navigator>
     </NavigationContainer>
     </NavigationIndependentTree>

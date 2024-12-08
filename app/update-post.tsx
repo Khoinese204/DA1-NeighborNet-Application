@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   View,
   Text,
   TextInput,
@@ -8,43 +9,75 @@ import {
   StyleSheet,
   Modal,
   FlatList,
+  Button,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker'
+import * as ImagePicker from 'expo-image-picker';
+import { insertPost } from '../service/postService';
 
-
-const PostScreen = () => {
+const UpdatePostScreen = () => {
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
   const [audienceModalVisible, setAudienceModalVisible] = useState(false);
   const [selectedService, setSelectedService] = useState('Dịch vụ');
   const [selectedAudience, setSelectedAudience] = useState('Đối tượng');
+  const [image, setImage] = useState<string | null>(null);
+  const [content, setContent] = useState('');
 
   const services = [
-    'Sửa chữa nhà cửa',
-    'Vệ sinh',
-    'Giao hàng và vận chuyển',
-    'Cây cảnh và thú cưng',
-    'Giáo dục',
-    'Chăm sóc sức khỏe',
-    'Mua bán',
-  ];
+      { id: 1, name: 'Sửa chữa nhà cửa' },
+      { id: 2, name: 'Vệ sinh' },
+      { id: 3, name: 'Giao hàng và vận chuyển' },
+      { id: 4, name: 'Cây cảnh và thú cưng' },
+      { id: 5, name: 'Giáo dục' },
+      { id: 6, name: 'Chăm sóc sức khỏe' },
+      { id: 7, name: 'Mua bán' },
+    ];
 
   const audiences = ['Mọi người', 'Chỉ mình tôi'];
-
+  const userid = 5; // ID người dùng giả định
+  const scope = selectedAudience;
+  const serviceid = services.find((s) => s.name === selectedService)?.id || null;
   
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
 
-  // const {user} = useAuth();
-  const onPick = async (isImage: any) => {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // deperated
-        allowsEditing: true,
-        aspect: [4,3],
-        quality: 0.7
-      })
-  }
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
 
-  const onSubmit = async () => {
-    
-  }
+  const handlePost = async () => {
+    if (!content.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập nội dung bài viết.');
+      return;
+    }
+
+    if (!serviceid) {
+      Alert.alert('Lỗi', 'Vui lòng chọn một dịch vụ.');
+      return;
+    }
+
+    if (scope === 'Đối tượng') {
+        Alert.alert('Lỗi', 'Vui lòng chọn đối tượng xem')
+        return
+    }
+    try {
+      await insertPost(userid, serviceid, content, image, scope);
+      Alert.alert('Thành công', 'Bài viết đã được đăng.');
+      setContent('');
+      setImage(null);
+      setSelectedService('Dịch vụ');
+      setSelectedAudience('Đối tượng');
+    } catch (error) {
+      Alert.alert('Lỗi', `Không thể đăng bài viết: ${error.message}`);
+    }
+  };
+
+
 
 
   return (
@@ -61,7 +94,7 @@ const PostScreen = () => {
             <Text style={styles.userLocation}>Cư dân tòa S1.01</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.postButton}>
+        <TouchableOpacity style={styles.postButton} onPress={handlePost}>
           <Text style={styles.postButtonText}>Đăng</Text>
         </TouchableOpacity>
       </View>
@@ -87,17 +120,34 @@ const PostScreen = () => {
         style={styles.input}
         placeholder="Bạn đang nghĩ gì?"
         placeholderTextColor="#b0b0b0"
-        multiline
+        multiline={true}
+        value={content}
+        onChangeText={setContent}
       />
 
-         {/* Image Picker */} 
-      <TouchableOpacity style={styles.imagePicker} onPress={()=> onPick(true)}>
-        <Image
-          source={{ uri: 'https://via.placeholder.com/50' }}
-          style={styles.imageIcon}
-        />
-        <Text style={styles.imagePickerText}>Hình ảnh</Text>
+      {/* Image Picker */}
+      <View style={styles.imagePicker}>
+  <TouchableOpacity onPress={pickImage}>
+    <Image
+      source={{ uri: 'https://via.placeholder.com/50' }}
+      style={styles.imageIcon}
+    />
+    <Text style={styles.imagePickerText}>Hình ảnh</Text>
+  </TouchableOpacity>
+
+  {/* Nếu có ảnh, hiển thị ảnh đã chọn với nút xóa */}
+  {image && (
+    <View style={styles.imagePreviewContainer}>
+      <Image source={{ uri: image }} style={styles.previewImage} />
+      <TouchableOpacity
+        style={styles.removeImageButton}
+        onPress={() => setImage(null)}
+      >
+        <Text style={styles.removeImageText}>✕</Text>
       </TouchableOpacity>
+    </View>
+  )}
+</View>
 
       {/* Service Modal */}
       {serviceModalVisible && (
@@ -116,11 +166,11 @@ const PostScreen = () => {
                   <TouchableOpacity
                     style={styles.modalItem}
                     onPress={() => {
-                      setSelectedService(item);
+                      setSelectedService(item.name);
                       setServiceModalVisible(false);
                     }}
                   >
-                    <Text style={styles.modalText}>{item}</Text>
+                    <Text style={styles.modalText}>{item.name}</Text>
                   </TouchableOpacity>
                 )}
               />
@@ -174,7 +224,7 @@ const PostScreen = () => {
   );
 };
 
-export default PostScreen;
+export default UpdatePostScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -237,15 +287,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
     marginTop: 8,
-    marginBottom: 100,
+    marginBottom: 16,
     textAlignVertical: 'top',
     padding: 8,
-    maxHeight: 350
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    maxHeight: 300,
   },
   imagePicker: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 100
   },
   imageIcon: {
     width: 50,
@@ -267,7 +319,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
-    paddingBottom: 32,
   },
   modalItem: {
     backgroundColor: '#f9f9f9',
@@ -289,5 +340,31 @@ const styles = StyleSheet.create({
   closeModalText: {
     color: '#fff',
     fontSize: 16,
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 10, // Khoảng cách từ mép trên của ảnh
+    right: 10, // Khoảng cách từ mép phải của ảnh
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeImageText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });

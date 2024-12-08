@@ -6,7 +6,7 @@ const index = () => {
     const router = useRouter()
     return (
      <View>
-        <Button title="Main Page" onPress={() => router.push('mainpagev1')}></Button>
+        <Button title="Main Page" onPress={() => router.push('mainpagev2')}></Button>
  
      </View>
     )

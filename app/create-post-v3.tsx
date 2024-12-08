@@ -14,7 +14,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { insertPost } from '../service/postService';
 
-const PostScreen = () => {
+const CreatePostScreen = () => {
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
   const [audienceModalVisible, setAudienceModalVisible] = useState(false);
   const [selectedService, setSelectedService] = useState('Dịch vụ');
@@ -61,8 +61,12 @@ const PostScreen = () => {
       return;
     }
 
+    if (scope === 'Đối tượng') {
+        Alert.alert('Lỗi', 'Vui lòng chọn đối tượng xem')
+        return
+    }
     try {
-      await insertPost(userid, serviceid, content, image);
+      await insertPost(userid, serviceid, content, image, scope);
       Alert.alert('Thành công', 'Bài viết đã được đăng.');
       setContent('');
       setImage(null);
@@ -123,15 +127,27 @@ const PostScreen = () => {
 
       {/* Image Picker */}
       <View style={styles.imagePicker}>
-        <TouchableOpacity onPress={pickImage}>
-          <Image
-            source={{ uri: 'https://via.placeholder.com/50' }}
-            style={styles.imageIcon}
-          />
-          <Text style={styles.imagePickerText}>Hình ảnh</Text>
-        </TouchableOpacity>
-        {image && <Image source={{ uri: image }} style={styles.previewImage} />}
-      </View>
+  <TouchableOpacity onPress={pickImage}>
+    <Image
+      source={{ uri: 'https://via.placeholder.com/50' }}
+      style={styles.imageIcon}
+    />
+    <Text style={styles.imagePickerText}>Hình ảnh</Text>
+  </TouchableOpacity>
+
+  {/* Nếu có ảnh, hiển thị ảnh đã chọn với nút xóa */}
+  {image && (
+    <View style={styles.imagePreviewContainer}>
+      <Image source={{ uri: image }} style={styles.previewImage} />
+      <TouchableOpacity
+        style={styles.removeImageButton}
+        onPress={() => setImage(null)}
+      >
+        <Text style={styles.removeImageText}>✕</Text>
+      </TouchableOpacity>
+    </View>
+  )}
+</View>
 
       {/* Service Modal */}
       {serviceModalVisible && (
@@ -208,7 +224,7 @@ const PostScreen = () => {
   );
 };
 
-export default PostScreen;
+export default CreatePostScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -293,11 +309,6 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 8,
   },
-  previewImage: {
-    width: 200,
-    height: 200,
-    marginTop: 16,
-  },
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -329,5 +340,31 @@ const styles = StyleSheet.create({
   closeModalText: {
     color: '#fff',
     fontSize: 16,
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 10, // Khoảng cách từ mép trên của ảnh
+    right: 10, // Khoảng cách từ mép phải của ảnh
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeImageText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
