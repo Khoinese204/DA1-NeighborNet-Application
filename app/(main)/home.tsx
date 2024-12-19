@@ -12,7 +12,7 @@ const Home = () => {
     clusterid: string;
   } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-
+  console.log('User login: ' + 'Email: ' + userInfo?.email + ', Name: ' +  userInfo?.name)
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
@@ -52,7 +52,8 @@ const Home = () => {
           gender: userData.gender,
           clusterid: userData.clusterid,
         });
-        console.log('User login: ' + userInfo?.name + ' ' +  userInfo?.email)
+        // check user infor
+        
       } catch (error: any) {
         console.error("Lỗi:", error.message);
         setUserInfo(null);

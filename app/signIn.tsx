@@ -41,11 +41,11 @@ const signIn = () => {
     });
     setLoading(false);
 
-    console.log('error: ', error);
+    //console.log('error: ', error);
     if(error){
         Alert.alert('Login', error.message);
     }
-    console.log('Login success: ', data);
+    //console.log('Login success: ', data);
         // Điều hướng đến màn hình Home sau khi đăng nhập thành công
         router.push('/(main)/home');  // Điều hướng đến trang "home"
 }
