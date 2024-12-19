@@ -17,8 +17,8 @@ import { insertPost } from '../service/postService';
 const CreatePostScreen = () => {
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
   const [audienceModalVisible, setAudienceModalVisible] = useState(false);
-  const [selectedService, setSelectedService] = useState('Dịch vụ');
-  const [selectedAudience, setSelectedAudience] = useState('Đối tượng');
+  const [selectedService, setSelectedService] = useState('Mua bán');
+  const [selectedAudience, setSelectedAudience] = useState('Mọi người');
   const [image, setImage] = useState<string | null>(null);
   const [content, setContent] = useState('');
 
@@ -55,16 +55,6 @@ const CreatePostScreen = () => {
       Alert.alert('Lỗi', 'Vui lòng nhập nội dung bài viết.');
       return;
     }
-
-    if (!serviceid) {
-      Alert.alert('Lỗi', 'Vui lòng chọn một dịch vụ.');
-      return;
-    }
-
-    if (scope === 'Đối tượng') {
-        Alert.alert('Lỗi', 'Vui lòng chọn đối tượng xem')
-        return
-    }
     try {
       await insertPost(userid, serviceid, content, image, scope);
       Alert.alert('Thành công', 'Bài viết đã được đăng.');
@@ -75,7 +65,7 @@ const CreatePostScreen = () => {
     } catch (error) {
       Alert.alert('Lỗi', `Không thể đăng bài viết: ${error.message}`);
     }
-  };
+  }
 
 
 
@@ -224,7 +214,7 @@ const CreatePostScreen = () => {
   );
 };
 
-export default CreatePostScreen;
+
 
 const styles = StyleSheet.create({
   container: {
@@ -367,4 +357,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-});
+})
+export default CreatePostScreen

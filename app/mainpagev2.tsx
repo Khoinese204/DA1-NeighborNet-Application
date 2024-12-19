@@ -108,9 +108,6 @@ const Tab = createBottomTabNavigator();
 
 const MainPage = () => {
   return (
-    <NavigationIndependentTree>
-    <NavigationContainer>
-      {/* Bottom Tab Navigator */}
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
@@ -151,8 +148,6 @@ const MainPage = () => {
         <Tab.Screen name="Thông báo" component={Notification} />
         <Tab.Screen name="Cá nhân" component={ViewProfile} />
       </Tab.Navigator>
-    </NavigationContainer>
-    </NavigationIndependentTree>
   );
 };
 

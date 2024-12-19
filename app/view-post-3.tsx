@@ -1,41 +1,47 @@
-import { getPosts } from "@/service/postService";
+import { getPostsForNewFeeds, removePost } from "@/service/postService";
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Modal } from "react-native";
+import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, Alert } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons"; // Import thư viện biểu tượng
 import UpdatePostScreen from "./update-post";
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { useNavigation } from "@react-navigation/native";
 
 type Post = {
     
-        id: any;
-        content: any;
-        created_at: any;
-        likeCount: any;
-        commentCount: any;
-        shareCount: any;
-        image: any;
-        object: any;
-        userID: any;
-        user: {
-            name: any;
-            clusterid: any;
-            cluster: {
-                name: any;
-            }[];
-        }[];
-        serviceID: any;
-        service: {
+    id: any;
+    content: any;
+    created_at: any;
+    likeCount: any;
+    commentCount: any;
+    shareCount: any;
+    image: any;
+    object: any;
+    userID: any;
+    user: {
+        name: any;
+        clusterid: any;
+        cluster: {
             name: any;
         }[];
-        isDelete: any;
-        isFeature: any;
-        isModerate: any;
+    }[];
+    serviceID: any;
+    service: {
+        name: any;
+    }[];
+    isDelete: any;
+    isFeature: any;
+    isModerate: any;
 }
 
-const PostItem = ({ post }: { post: any }) => {
+const PostItem = ({ post }: { post: Post }) => {
     const [isLiked, setIsLiked] = useState(false); // Trạng thái Like
+    
 
+    const navigation = useNavigation();
     const handleLikePress = () => {
       setIsLiked(!isLiked); // Đổi trạng thái khi nhấn
+      // xử lý sự kiện like 
+      
     };
 
      const [menuVisible, setMenuVisible] = useState(false); // Hiển thị menu
@@ -44,19 +50,24 @@ const PostItem = ({ post }: { post: any }) => {
       setMenuVisible(!menuVisible); // Đóng/mở menu
     };
   
-    const handleEdit = () => {
+    const handleEdit = (selectedPost: Post) => {
+      console.log('Post', selectedPost)
       setMenuVisible(false);
       console.log("Chỉnh sửa bài viết:");
-      <UpdatePostScreen></UpdatePostScreen>
+      navigation.navigate('UpdatePost', {selectedPost})
     };
   
-    const handleDelete = () => {
+    const handleDelete = async (selectedPost: Post) => {
       setMenuVisible(false);
       console.log("Xóa bài viết:");
-      // Thêm logic xóa bài viết ở đây
+      try {
+            await removePost(selectedPost.id);
+            Alert.alert('Thành công', 'Bài viết đã được xóa thành công.');
+          } catch (error) {
+            Alert.alert('Lỗi', `Không thể xóa bài viết: ${error.message}`);
+          } 
     };
 return (
-    post.object === "Mọi người" ? ( 
     <View style={styles.postContainer}>
         {/* Header bài viết */}
         <View style={styles.postHeader}>
@@ -103,13 +114,13 @@ return (
             onPress={() => setMenuVisible(false)} // Đóng menu khi nhấn ngoài
           >
             <View style={[styles.menuContainer, styles.menuPosition]}>
-              <TouchableOpacity style={styles.menuOption} onPress={handleEdit}>
+              <TouchableOpacity style={styles.menuOption} onPress={() => handleEdit(post)}>
                 <View style={styles.menuItem}>
                   <Icon name="create-outline" size={18} color="#000" style={styles.menuIcon} />
                   <Text style={styles.menuText}>Chỉnh sửa bài viết</Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.menuOption} onPress={handleDelete}>
+              <TouchableOpacity style={styles.menuOption} onPress={() => handleDelete(post)}>
                 <View style={styles.menuItem}>
                   <Icon name="trash-outline" size={18} color="#000" style={styles.menuIcon} />
                   <Text style={styles.menuText}>Xóa bài viết</Text>
@@ -154,24 +165,25 @@ return (
         </View>
       </View>
     </View>
-    ) : null
   );
 }
+
+
 
 const PostsListScreen = () => {
     const [posts, setPosts] = useState<any[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false); // Trạng thái làm mới
    
-  
-  
+
     useEffect(() => {
       // Lấy các bài viết khi màn hình được tải lần đầu
       loadPosts();
     }, []);
-  
+    
+
     const loadPosts = async () => {
       try {
-        const fetchedPosts = await getPosts(); // Gọi API lấy dữ liệu
+        const fetchedPosts = await getPostsForNewFeeds(); // Gọi API lấy dữ liệu
         setPosts(fetchedPosts);
       } catch (error) {
         console.error('Error fetching posts:', error);
@@ -188,7 +200,7 @@ const PostsListScreen = () => {
       <View style={{ flex: 1 }}>
         <FlatList
           data={posts}
-          renderItem={({ item }) => <PostItem post={item} />}
+          renderItem={({ item }) => <PostItem post={item}/>}
           contentContainerStyle={styles.listContainer}
           keyExtractor={(item) => item.id.toString()}
           refreshControl={
@@ -199,6 +211,7 @@ const PostsListScreen = () => {
           }
         />
       </View>
+
     );
   };
 

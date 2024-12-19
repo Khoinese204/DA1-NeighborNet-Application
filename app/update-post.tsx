@@ -12,15 +12,22 @@ import {
   Button,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { insertPost } from '../service/postService';
+import { insertPost, updatePost } from '../service/postService';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useRoute } from '@react-navigation/native';
 
-const UpdatePostScreen = () => {
+const UpdatePostScreen = ({ route, navigation }: { route: any, navigation: any }) => {
+  
+  const post = route.params.selectedPost;
+
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
   const [audienceModalVisible, setAudienceModalVisible] = useState(false);
-  const [selectedService, setSelectedService] = useState('Dịch vụ');
-  const [selectedAudience, setSelectedAudience] = useState('Đối tượng');
-  const [image, setImage] = useState<string | null>(null);
-  const [content, setContent] = useState('');
+  const [selectedService, setSelectedService] = useState(post.service.name);
+  const [selectedAudience, setSelectedAudience] = useState(post.object);
+  const [image, setImage] = useState<string | null>(post.image);
+  const [content, setContent] = useState(post.content);
+
+  
 
   const services = [
       { id: 1, name: 'Sửa chữa nhà cửa' },
@@ -31,7 +38,7 @@ const UpdatePostScreen = () => {
       { id: 6, name: 'Chăm sóc sức khỏe' },
       { id: 7, name: 'Mua bán' },
     ];
-
+    
   const audiences = ['Mọi người', 'Chỉ mình tôi'];
   const userid = 5; // ID người dùng giả định
   const scope = selectedAudience;
@@ -50,38 +57,39 @@ const UpdatePostScreen = () => {
     }
   };
 
-  const handlePost = async () => {
+  const handleSave = async () => {
     if (!content.trim()) {
       Alert.alert('Lỗi', 'Vui lòng nhập nội dung bài viết.');
       return;
     }
-
-    if (!serviceid) {
-      Alert.alert('Lỗi', 'Vui lòng chọn một dịch vụ.');
-      return;
-    }
-
-    if (scope === 'Đối tượng') {
-        Alert.alert('Lỗi', 'Vui lòng chọn đối tượng xem')
-        return
-    }
     try {
-      await insertPost(userid, serviceid, content, image, scope);
-      Alert.alert('Thành công', 'Bài viết đã được đăng.');
-      setContent('');
-      setImage(null);
-      setSelectedService('Dịch vụ');
-      setSelectedAudience('Đối tượng');
+      await updatePost(post.id, serviceid, content, image, scope);
+      Alert.alert('Thành công', 'Bài viết đã được chỉnh sửa thành công.');
     } catch (error) {
-      Alert.alert('Lỗi', `Không thể đăng bài viết: ${error.message}`);
+      Alert.alert('Lỗi', `Không thể chỉnh sửa bài viết: ${error.message}`);
     }
   };
 
 
-
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+        navigation.goBack(); // Quay lại nếu có lịch sử
+    } else {
+        navigation.navigate('MainPage'); // Quay về trang chính
+    }
+};
 
   return (
     <View style={styles.container}>
+       <View style={styles.topBar}>
+      {/* Nút X */}
+      <TouchableOpacity style={styles.closeButtonWrapper} onPress={handleBack}>
+        <Ionicons name="close" size={24} color="#000" />
+      </TouchableOpacity>
+
+      {/* Tiêu đề */}
+      <Text style={styles.topBarTitle}>Chỉnh sửa bài viết</Text>
+    </View>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
@@ -90,12 +98,12 @@ const UpdatePostScreen = () => {
             style={styles.avatar}
           />
           <View>
-            <Text style={styles.userName}>Khánh Huy</Text>
-            <Text style={styles.userLocation}>Cư dân tòa S1.01</Text>
+            <Text style={styles.userName}>{post.user.name}</Text>
+            <Text style={styles.userLocation}>Cư dân tòa {post.user.cluster.name}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.postButton} onPress={handlePost}>
-          <Text style={styles.postButtonText}>Đăng</Text>
+        <TouchableOpacity style={styles.postButton} onPress={handleSave}>
+          <Text style={styles.postButtonText}>Lưu</Text>
         </TouchableOpacity>
       </View>
 
@@ -366,5 +374,24 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+  },
+  closeButtonWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Màu nền mờ
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  topBarTitle: {
+    fontSize: 20,
+    color: '#000',
+    marginLeft: 8, // Khoảng cách giữa nút "X" và tiêu đề
   },
 });
