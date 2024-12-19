@@ -1,134 +1,100 @@
-import React, { useState } from "react";
-import {
-  Alert,
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  Pressable,
-  Image,
-  TouchableOpacity,
-} from "react-native";
-import { useRouter } from "expo-router";
-import { useUser } from "../../contexts/UserContext"; // Import UserContext
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabase";
+import React from "react";
+import { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 
 const Home = () => {
-  const router = useRouter();
+  const [userInfo, setUserInfo] = useState<{
+    name: string;
+    email: string;
+    dateofbirth: string;
+    gender: string;
+    clusterid: string;
+  } | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Định nghĩa kiểu dữ liệu cho email và password
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        // Lấy thông tin session hiện tại
+        const { data: session, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
 
-  // Định nghĩa kiểu dữ liệu cho trạng thái ẩn/hiện mật khẩu
-  const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
+        const userId = session?.session?.user?.id;
+        if (!userId) {
+          throw new Error("Người dùng chưa đăng nhập");
+        }
 
-  // Định nghĩa kiểu dữ liệu cho trạng thái loading
-  const [loading, setLoading] = useState<boolean>(false);
+        // Truy xuất thông tin từ bảng public.account
+        const { data: accountData, error: accountError } = await supabase
+          .from("account")
+          .select("accountid, email")
+          .eq("accountid", userId)
+          .single();
 
+        if (accountError) throw accountError;
 
+        const accountId = accountData.accountid;
 
+        // Truy xuất thông tin từ bảng public.user
+        const { data: userData, error: userError } = await supabase
+          .from("user")
+          .select("name, dateofbirth, gender, clusterid")
+          .eq("accountid", accountId)
+          .single();
+
+        if (userError) throw userError;
+
+        setUserInfo({
+          name: userData.name,
+          email: accountData.email, // Email lấy từ bảng public.account
+          dateofbirth: userData.dateofbirth,
+          gender: userData.gender,
+          clusterid: userData.clusterid,
+        });
+        console.log('User login: ' + userInfo?.name + ' ' +  userInfo?.email)
+      } catch (error: any) {
+        console.error("Lỗi:", error.message);
+        setUserInfo(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
+    
     <View style={styles.container}>
-      {/* Title */}
       <Text style={styles.title}>HOME</Text>
+      {userInfo ? (
+        <>
+          <Text style={styles.info}>Tên: {userInfo.name}</Text>
+          <Text style={styles.info}>Email: {userInfo.email}</Text>
+          <Text style={styles.info}>Ngày sinh: {userInfo.dateofbirth}</Text>
+          <Text style={styles.info}>Giới tính: {userInfo.gender}</Text>
+          <Text style={styles.info}>Cụm: {userInfo.clusterid}</Text>
+        </>
+      ) : (
+        <Text style={styles.info}>Không tìm thấy thông tin người dùng</Text>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 30,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 20,
-  },
-  icon: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-  },
-  loginButton: {
-    backgroundColor: "black",
-    padding: 15,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  loginButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#d9d9d9",
-  },
-  orText: {
-    marginHorizontal: 10,
-    fontSize: 14,
-    color: "#8c8c8c",
-  },
-  socialContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 10,
-  },
-  socialButton: {
-    marginHorizontal: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#d9d9d9",
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    width: 50,
-    height: 50,
-  },
-  socialIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: "contain",
-  },
-  signupContainer: {
-    flexDirection: "row",
-    marginTop: 20,
-    justifyContent: "center",
-  },
-  signupText: {
-    fontSize: 14,
-    color: "#8c8c8c",
-  },
-  signupLink: {
-    fontSize: 14,
-    color: "#007aff",
-    fontWeight: "600",
-  },
+  container: { flex: 1, justifyContent: "center", alignItems: "center" },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
+  info: { fontSize: 16, marginVertical: 5 },
 });
 
 export default Home;
