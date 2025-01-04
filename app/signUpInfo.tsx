@@ -45,7 +45,7 @@ const SignUpInfo = () => {
 
       // Chuyển dữ liệu về định dạng DropDownPicker
       setClusters(
-        data.map((item) => ({
+        data.map((item: { name: any; clusterid: any; }) => ({
           label: item.name,
           value: item.clusterid,
         }))
